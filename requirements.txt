@@ -1,0 +1,5 @@
+beautifulsoup4==4.9.1
+bs4==0.0.1
+graphviz==0.14.1
+selenium==3.141.0
+subprocess32==3.5.4
