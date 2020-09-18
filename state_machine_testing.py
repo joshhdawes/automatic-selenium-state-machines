@@ -54,7 +54,6 @@ class EventTree(object):
         that we have new ones.
         """
         sequence = sequence[:-1]
-        pprint.pprint(sequence)
         # transform the sequence's elements into objects
         sequence_as_objs = map(Event, sequence)
         # traverse the event tree
@@ -262,8 +261,8 @@ class SSMBuilder(object):
                 response_html = BeautifulSoup(response.data)
                 toolbar = BeautifulSoup("""
     <div class="SM-toolbar">
-      <a href="#" id="SM-start-recording" class="badge record">start recording</a>
-      <a href="#" id="SM-send-test-code" class="badge">save</a>
+      <a href="#" id="SM-record-control" class="badge record">start recording</a>
+      <a href="#" id="SM-restart" class="badge danger">restart</a>
     </div>
                 """)
                 javascript = BeautifulSoup("""
@@ -275,6 +274,9 @@ class SSMBuilder(object):
 }
 .SM-toolbar a.badge {
   margin-top: 10px;
+}
+.SM-toolbar a.badge.danger {
+  background: black;
 }
 .SM-toolbar a.badge.record {
   background: red;
@@ -291,17 +293,24 @@ OBJS_CLICKED = [];
     $("body").mousedown(function(e) {
       if(RECORD_EVENTS) OBJS_CLICKED.push(identifyingDOMElement(e.target));
     });
-    $("#SM-start-recording").click(function(e) {
+    $("#SM-record-control").click(function(e) {
       e.preventDefault();
-      RECORD_EVENTS = true;
-      $(e.target).addClass("recording");
+      if(!RECORD_EVENTS) {
+        RECORD_EVENTS = true;
+        $(e.target).addClass("recording");
+        $(e.target).text("stop recording and save");
+      } else {
+        RECORD_EVENTS = false;
+        axios.post("/add_test_sequence/", data=OBJS_CLICKED).then(function(r) {
+          console.log(r);
+        });
+        $("#SM-record-control").removeClass("recording");
+        $("#SM-record-control").text("start recording");
+      }
     });
-    $("#SM-send-test-code").click(function(e) {
+    $("#SM-restart").click(function(e) {
       e.preventDefault();
-      axios.post("/add_test_sequence/", data=OBJS_CLICKED).then(function(r) {
-        console.log(r);
-      });
-      $("#SM-start-recording").removeClass("recording");
+      window.location.reload();
     });
     var identifyingDOMElement = function(obj) {
       if($(obj).is('body')) {
