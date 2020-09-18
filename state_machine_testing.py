@@ -261,10 +261,28 @@ class SSMBuilder(object):
                 print("Adding recording toolbar for test generation.")
                 response_html = BeautifulSoup(response.data)
                 toolbar = BeautifulSoup("""
-    <div><a href="#" id="start-recording" class="badge">start recording</a> <a href="#" id="send-test-code" class="badge">
-    save</a><br></div>
+    <div class="SM-toolbar">
+      <a href="#" id="SM-start-recording" class="badge record">start recording</a>
+      <a href="#" id="SM-send-test-code" class="badge">save</a>
+    </div>
                 """)
                 javascript = BeautifulSoup("""
+<style>
+.SM-toolbar {
+  height: 40px;
+  background: #CCC;
+  padding-left: 10px;
+}
+.SM-toolbar a.badge {
+  margin-top: 10px;
+}
+.SM-toolbar a.badge.record {
+  background: red;
+}
+.SM-toolbar a.badge.recording {
+  background: green;
+}
+</style>
 <script type="text/javascript">
 RECORD_EVENTS = false;
 OBJS_CLICKED = [];
@@ -273,9 +291,17 @@ OBJS_CLICKED = [];
     $("body").mousedown(function(e) {
       if(RECORD_EVENTS) OBJS_CLICKED.push(identifyingDOMElement(e.target));
     });
-    $("#start-recording").click(function(e) {
+    $("#SM-start-recording").click(function(e) {
       e.preventDefault();
       RECORD_EVENTS = true;
+      $(e.target).addClass("recording");
+    });
+    $("#SM-send-test-code").click(function(e) {
+      e.preventDefault();
+      axios.post("/add_test_sequence/", data=OBJS_CLICKED).then(function(r) {
+        console.log(r);
+      });
+      $("#SM-start-recording").removeClass("recording");
     });
     var identifyingDOMElement = function(obj) {
       if($(obj).is('body')) {
@@ -292,12 +318,6 @@ OBJS_CLICKED = [];
       }
       return identifyingDict;
     }
-    $("#send-test-code").click(function(e) {
-      e.preventDefault();
-      axios.post("/add_test_sequence/", data=OBJS_CLICKED).then(function(r) {
-        console.log(r);
-      });
-    });
 })();
 </script>
                 """)
@@ -313,7 +333,7 @@ OBJS_CLICKED = [];
             self.event_tree.merge_sequence(objects)
             self.event_tree.write_to_file("event-tree.gv")
             generated_code = self.event_tree.to_state_machine_code()
-            with open("generated-state-machine-%s.py" % request.path.replace("/", "-"), "w") as h:
+            with open("generated-state-machine-%s.py" % request.path.replace("/", ""), "w") as h:
                 h.write(generated_code)
             return "received!"
 
