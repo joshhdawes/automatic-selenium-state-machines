@@ -107,10 +107,13 @@ class EventTree(object):
 
         for (n, event) in enumerate(self.events):
             if event is not self.root:
+                xpath = self._dom_dict_to_xpath_string(event.data)
                 transition_code = "def transition_function_%i(runner):\n" % n
                 transition_code += "  driver = runner.driver()\n"
-                transition_code += "  driver.find_element_by_xpath('%s').click()\n" %\
-                                   self._dom_dict_to_xpath_string(event.data)
+                transition_code += "  element = driver.find_element(By.XPATH, '%s')\n" % xpath
+                transition_code += "  wait = WebDriverWait(driver, 10)\n"
+                transition_code += "  wait.until(EC.visibility_of(element))\n"
+                transition_code += "  element.click()\n"
                 self.transition_code_strings.append(transition_code)
 
         # generate code for empty states
@@ -148,7 +151,12 @@ class EventTree(object):
         all_transition_instantiation_code = "\n".join(self.transition_instantiation_strings)
 
         final_code = """
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 import state_machine_testing as smt
+
 # transition code
 
 %s
@@ -778,10 +786,6 @@ class StateSequence(object):
                     break
             # execute the element's function with this state sequence object
             try:
-                # delay while things render - this is a temporary solution
-                # better solution would be to record the times between clicks
-                # on the javascript side and use this to determine the delay
-                time.sleep(2)
                 element.execute(self)
                 if type(element) is StateMachineState:
                     results_queue.put({
