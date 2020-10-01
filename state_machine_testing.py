@@ -263,6 +263,7 @@ class SSMBuilder(object):
     <div class="SM-toolbar">
       <a href="#" id="SM-record-control" class="badge record">start recording</a>
       <a href="#" id="SM-restart" class="badge danger">restart</a>
+      <a href="#" id="SM-reset" class="badge">reset</a>
     </div>
                 """)
                 javascript = BeautifulSoup("""
@@ -312,6 +313,12 @@ OBJS_CLICKED = [];
       e.preventDefault();
       window.location.reload();
     });
+    $("#SM-reset").click(function(e) {
+      e.preventDefault();
+      axios.get("/reset_event_tree/").then(function() {
+        OBJS_CLICKED = [];
+      });
+    });
     var identifyingDOMElement = function(obj) {
       if($(obj).is('body')) {
         var identifyingDict = {type: "body"};
@@ -345,6 +352,13 @@ OBJS_CLICKED = [];
             with open("generated-state-machine-%s.py" % request.path.replace("/", ""), "w") as h:
                 h.write(generated_code)
             return "received!"
+
+        # set up end-point to reset the event tree
+        @flask_app.route("/reset_event_tree/", methods=["GET"])
+        def reset_event_tree():
+            self.event_tree = EventTree()
+            self.event_tree.write_to_file("event-tree.gv")
+            return "event tree emptied!"
 
 
 class StateMachineCollection(object):
