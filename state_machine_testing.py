@@ -109,9 +109,11 @@ class EventTree(object):
                 xpath = self._dom_dict_to_xpath_string(event.data)
                 transition_code = "def transition_function_%i(runner):\n" % n
                 transition_code += "  driver = runner.driver()\n"
-                transition_code += "  element = driver.find_element(By.XPATH, '%s')\n" % xpath
+                #transition_code += "  element = driver.find_element(By.XPATH, '%s')\n" % xpath
+                transition_code += "  locator = (By.XPATH, '%s')\n" % xpath
                 transition_code += "  wait = WebDriverWait(driver, 10)\n"
-                transition_code += "  wait.until(EC.visibility_of(element))\n"
+                transition_code += "  element = wait.until(EC.presence_of_element_located(locator))\n"
+                transition_code += "  time.sleep(5)\n"
                 transition_code += "  element.click()\n"
                 self.transition_code_strings.append(transition_code)
 
@@ -153,6 +155,7 @@ class EventTree(object):
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import time
 
 import state_machine_testing as smt
 
